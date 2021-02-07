@@ -1,4 +1,4 @@
-module rest
+module github.com/raver119/rest
 
 go 1.14
 
