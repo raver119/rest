@@ -92,13 +92,17 @@ func TestClient_ServeDNS(t *testing.T) {
 
 			_, _ = z.ServeDNS(ctx, rec, tt.r)
 
-			require.Equal(t, tt.wantFailure, rec.Msg == nil)
+			require.Equal(t, tt.wantFailure, (rec.Msg == nil || rec.Msg.Answer == nil))
 
 			// validate answers
-			if resp := rec.Msg; rec.Msg != nil {
+			if resp := rec.Msg; rec.Msg != nil && tt.name != "test_3" {
 				if err := test.SortAndCheck(resp, tt.tc); err != nil {
 					t.Error(err)
 				}
+			}
+
+			if tt.name == "test_3" {
+				require.Equal(t, dns.RcodeNameError, rec.Msg.Rcode)
 			}
 
 			if rec.Msg != nil && len(rec.Msg.Answer) > 0 {
