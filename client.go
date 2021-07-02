@@ -53,8 +53,10 @@ func (z Client) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) 
 
 	domain := reDot.ReplaceAllString(qname, "")
 
-	resp, err := http.Get(fmt.Sprintf("%v%v/%v", z.url, tt, domain))
+	url := fmt.Sprintf("%v%v/%v", z.url, tt, domain)
+	resp, err := http.Get(url)
 	if err != nil {
+		LogVerbose("failed to build REST request: [%v]; URL: [%v]", err, url)
 		return dns.RcodeServerFailure, err
 	}
 
@@ -62,14 +64,18 @@ func (z Client) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) 
 	if resp.StatusCode == http.StatusOK {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
+			LogVerbose("failed to read response body: [%v];", err)
 			return dns.RcodeServerFailure, err
 		}
 
 		err = json.Unmarshal(body, &ips)
 		if err != nil {
+			LogVerbose("failed to deserialize response: [%v]; response: [%v];", err, body)
 			return dns.RcodeServerFailure, err
 		}
 	} else {
+		body, _ := ioutil.ReadAll(resp.Body)
+		LogVerbose("got non-200 response: [%v]; body: [%v];", resp.StatusCode, body)
 		return dns.RcodeNameError, nil
 	}
 
